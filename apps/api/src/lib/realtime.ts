@@ -1,0 +1,62 @@
+import type { Server as HttpServer } from "node:http";
+import { Server as SocketIOServer } from "socket.io";
+import { createChildLogger } from "./logger.js";
+
+const log = createChildLogger({ service: "realtime" });
+
+export type ServerToClientEvents = {
+  "message:created": (payload: {
+    id: string;
+    channelId: string;
+    workspaceId: string;
+    body: string;
+    userId: string;
+    createdAt: string;
+    author: { id: string; name: string; avatarUrl?: string | null };
+  }) => void;
+  "message:edited": (payload: { id: string; body: string; updatedAt: string }) => void;
+  "message:deleted": (payload: { id: string; channelId: string }) => void;
+  "channel:created": (payload: { id: string; name: string | null; type: string }) => void;
+  "user:presence": (payload: { userId: string; status: "online" | "offline" }) => void;
+};
+
+export type ClientToServerEvents = {
+  "channel:join": (channelId: string) => void;
+  "channel:leave": (channelId: string) => void;
+  "workspace:join": (workspaceId: string) => void;
+};
+
+export function createSocketServer(httpServer: HttpServer) {
+  const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+    cors: {
+      origin: process.env["NEXT_PUBLIC_APP_URL"] ?? "http://localhost:3000",
+      credentials: true,
+    },
+    transports: ["websocket", "polling"],
+  });
+
+  io.on("connection", (socket) => {
+    log.debug({ socketId: socket.id }, "Socket connected");
+
+    socket.on("workspace:join", (workspaceId) => {
+      void socket.join(`workspace:${workspaceId}`);
+      log.debug({ socketId: socket.id, workspaceId }, "Joined workspace room");
+    });
+
+    socket.on("channel:join", (channelId) => {
+      void socket.join(`channel:${channelId}`);
+    });
+
+    socket.on("channel:leave", (channelId) => {
+      void socket.leave(`channel:${channelId}`);
+    });
+
+    socket.on("disconnect", (reason) => {
+      log.debug({ socketId: socket.id, reason }, "Socket disconnected");
+    });
+  });
+
+  return io;
+}
+
+export type SocketIOInstance = ReturnType<typeof createSocketServer>;
