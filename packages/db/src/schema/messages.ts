@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { channels } from "./channels.js";
 import { users } from "./users.js";
 
@@ -44,6 +44,23 @@ export const messageReactions = pgTable(
   (t) => [index("message_reactions_message_idx").on(t.messageId)],
 );
 
+export const messageAttachments = pgTable(
+  "message_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    fileName: text("file_name").notNull(),
+    fileSize: integer("file_size").notNull(),
+    mimeType: text("mime_type").notNull(),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("message_attachments_message_idx").on(t.messageId)],
+);
+
 export type DbMessage = typeof messages.$inferSelect;
 export type DbNewMessage = typeof messages.$inferInsert;
 export type DbMessageReaction = typeof messageReactions.$inferSelect;
+export type DbMessageAttachment = typeof messageAttachments.$inferSelect;

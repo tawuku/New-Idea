@@ -7,6 +7,7 @@ type ServerToClientEvents = {
     workspaceId: string;
     body: string;
     userId: string;
+    parentId: string | null;
     createdAt: string;
     author: { id: string; name: string; avatarUrl?: string | null };
   }) => void;
@@ -14,12 +15,20 @@ type ServerToClientEvents = {
   "message:deleted": (payload: { id: string; channelId: string }) => void;
   "channel:created": (payload: { id: string; name: string | null; type: string }) => void;
   "user:presence": (payload: { userId: string; status: "online" | "offline" }) => void;
+  "notification:new": (payload: {
+    id: string;
+    type: string;
+    title: string;
+    body: string | null;
+    createdAt: string;
+  }) => void;
 };
 
 type ClientToServerEvents = {
   "channel:join": (channelId: string) => void;
   "channel:leave": (channelId: string) => void;
   "workspace:join": (workspaceId: string) => void;
+  "user:join": (userId: string) => void;
 };
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;

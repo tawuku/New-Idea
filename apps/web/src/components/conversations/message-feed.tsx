@@ -3,14 +3,17 @@
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 import type { MessageWithAuthor } from "@nexus/schemas/message";
+import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export function MessageFeed({
   channelId,
   workspaceSlug,
+  onThreadOpen,
 }: {
   channelId: string;
   workspaceSlug: string;
+  onThreadOpen?: (message: MessageWithAuthor) => void;
 }) {
   const [messages, setMessages] = useState<MessageWithAuthor[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -31,7 +34,7 @@ export function MessageFeed({
     socket.emit("channel:join", channelId);
 
     socket.on("message:created", (payload) => {
-      if (payload.channelId !== channelId) return;
+      if (payload.channelId !== channelId || payload.parentId) return;
       setMessages((prev) => [
         ...prev,
         {
@@ -39,6 +42,7 @@ export function MessageFeed({
           channelId: payload.channelId,
           workspaceId: payload.workspaceId,
           userId: payload.userId,
+          parentId: payload.parentId,
           body: payload.body,
           edited: false,
           createdAt: new Date(payload.createdAt),
@@ -90,7 +94,14 @@ export function MessageFeed({
         const prevMsg = idx > 0 ? messages[idx - 1] : null;
         const grouped = prevMsg?.author.id === msg.author.id;
 
-        return <MessageBubble key={msg.id} message={msg} grouped={grouped} />;
+        return (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            grouped={grouped}
+            {...(onThreadOpen ? { onReply: () => onThreadOpen(msg) } : {})}
+          />
+        );
       })}
       <div ref={bottomRef} aria-hidden />
     </div>
@@ -100,9 +111,11 @@ export function MessageFeed({
 function MessageBubble({
   message,
   grouped,
+  onReply,
 }: {
   message: MessageWithAuthor;
   grouped: boolean;
+  onReply?: () => void;
 }) {
   const time = new Intl.DateTimeFormat("en", {
     hour: "2-digit",
@@ -110,7 +123,7 @@ function MessageBubble({
   }).format(message.createdAt);
 
   return (
-    <div className={cn("flex gap-3 group", grouped ? "mt-0.5" : "mt-3")}>
+    <div className={cn("flex gap-3 group relative", grouped ? "mt-0.5" : "mt-3")}>
       {grouped ? (
         <div className="w-8 shrink-0" />
       ) : (
@@ -121,7 +134,7 @@ function MessageBubble({
           {message.author.name?.[0]?.toUpperCase() ?? "?"}
         </div>
       )}
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         {!grouped && (
           <div className="flex items-baseline gap-2 mb-0.5">
             <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
@@ -144,6 +157,25 @@ function MessageBubble({
           )}
         </p>
       </div>
+
+      {onReply && (
+        <button
+          type="button"
+          onClick={onReply}
+          className={cn(
+            "absolute right-0 top-0 opacity-0 group-hover:opacity-100",
+            "flex items-center gap-1 px-2 py-1 rounded-md text-xs",
+            "text-neutral-500 dark:text-neutral-400",
+            "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+            "transition-all duration-[120ms]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
+          )}
+          aria-label="Reply in thread"
+        >
+          <MessageSquare className="size-3.5" aria-hidden />
+          <span>Reply</span>
+        </button>
+      )}
     </div>
   );
 }

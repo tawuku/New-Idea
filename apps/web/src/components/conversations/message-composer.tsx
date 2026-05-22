@@ -10,9 +10,13 @@ import { useForm } from "react-hook-form";
 export function MessageComposer({
   channelId,
   workspaceSlug,
+  parentId,
+  placeholder,
 }: {
   channelId: string;
   workspaceSlug: string;
+  parentId?: string;
+  placeholder?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +37,7 @@ export function MessageComposer({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, parentId }),
       });
       if (!res.ok) throw new Error("Failed to send");
       reset();
@@ -66,7 +70,7 @@ export function MessageComposer({
         <textarea
           {...register("body")}
           onKeyDown={handleKeyDown}
-          placeholder="Write a message… (Enter to send, Shift+Enter for new line)"
+          placeholder={placeholder ?? "Write a message… (Enter to send, Shift+Enter for new line)"}
           rows={1}
           className={cn(
             "flex-1 resize-none bg-transparent text-sm",

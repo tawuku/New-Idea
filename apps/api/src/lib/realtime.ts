@@ -11,6 +11,7 @@ export type ServerToClientEvents = {
     workspaceId: string;
     body: string;
     userId: string;
+    parentId: string | null;
     createdAt: string;
     author: { id: string; name: string; avatarUrl?: string | null };
   }) => void;
@@ -18,12 +19,20 @@ export type ServerToClientEvents = {
   "message:deleted": (payload: { id: string; channelId: string }) => void;
   "channel:created": (payload: { id: string; name: string | null; type: string }) => void;
   "user:presence": (payload: { userId: string; status: "online" | "offline" }) => void;
+  "notification:new": (payload: {
+    id: string;
+    type: string;
+    title: string;
+    body: string | null;
+    createdAt: string;
+  }) => void;
 };
 
 export type ClientToServerEvents = {
   "channel:join": (channelId: string) => void;
   "channel:leave": (channelId: string) => void;
   "workspace:join": (workspaceId: string) => void;
+  "user:join": (userId: string) => void;
 };
 
 export function createSocketServer(httpServer: HttpServer) {
@@ -40,7 +49,6 @@ export function createSocketServer(httpServer: HttpServer) {
 
     socket.on("workspace:join", (workspaceId) => {
       void socket.join(`workspace:${workspaceId}`);
-      log.debug({ socketId: socket.id, workspaceId }, "Joined workspace room");
     });
 
     socket.on("channel:join", (channelId) => {
@@ -49,6 +57,12 @@ export function createSocketServer(httpServer: HttpServer) {
 
     socket.on("channel:leave", (channelId) => {
       void socket.leave(`channel:${channelId}`);
+    });
+
+    // Personal room for notifications and presence
+    socket.on("user:join", (userId) => {
+      void socket.join(`user:${userId}`);
+      io.emit("user:presence", { userId, status: "online" });
     });
 
     socket.on("disconnect", (reason) => {

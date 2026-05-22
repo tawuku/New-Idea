@@ -1,5 +1,7 @@
 "use client";
 
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import {
   CheckSquare,
@@ -23,6 +25,7 @@ const NAV_ITEMS = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
     <aside className="flex flex-col w-14 h-full border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
@@ -69,7 +72,8 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="pb-3 px-2">
+      <div className="pb-3 px-2 flex flex-col items-center gap-1">
+        {session?.user.id && <NotificationBell userId={session.user.id} />}
         <Link
           href="/settings"
           title="Settings"
