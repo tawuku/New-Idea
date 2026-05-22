@@ -37,7 +37,10 @@ declare module "fastify" {
 
 async function build() {
   const app = Fastify({
-    logger: logger as Parameters<typeof Fastify>[0]["logger"],
+    logger: {
+      level: process.env["NODE_ENV"] === "production" ? "info" : "debug",
+      redact: ["req.headers.authorization", "req.headers.cookie"],
+    },
     trustProxy: true,
     requestIdHeader: "x-trace-id",
   });

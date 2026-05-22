@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   transpilePackages: ["@nexus/ui", "@nexus/schemas"],
-  experimental: {
-    reactCompiler: true,
-  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
