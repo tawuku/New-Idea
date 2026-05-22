@@ -15,6 +15,7 @@
       "coverage",
       ".turbo",
       "drizzle",
+      "apps/desktop",
       "*.config.js",
       "*.config.cjs",
       "postcss.config.js"

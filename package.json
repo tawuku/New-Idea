@@ -8,8 +8,10 @@
     "pnpm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=!@nexus/desktop",
+    "dev:desktop": "turbo run dev --filter=@nexus/api --filter=@nexus/web & pnpm --filter @nexus/desktop start",
     "build": "turbo run build",
+    "build:desktop": "turbo run build --filter=@nexus/api --filter=@nexus/web && pnpm --filter @nexus/desktop package",
     "test": "turbo run test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
