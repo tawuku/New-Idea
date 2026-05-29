@@ -11,9 +11,11 @@ import Fastify from "fastify";
 import { logger } from "./lib/logger.js";
 import { type SocketIOInstance, createSocketServer } from "./lib/realtime.js";
 import { registerAuthMiddleware } from "./middleware/auth.js";
+import { createCollabServer } from "./lib/collab.js";
 import { channelRoutes } from "./routes/channels.js";
 import { healthRoutes } from "./routes/health.js";
 import { notificationRoutes } from "./routes/notifications.js";
+import { pageRoutes } from "./routes/pages.js";
 import { searchRoutes } from "./routes/search.js";
 import { uploadRoutes } from "./routes/uploads.js";
 import { workspaceRoutes } from "./routes/workspaces.js";
@@ -69,6 +71,7 @@ async function build() {
   await app.register(searchRoutes, { prefix: "/api/v1" });
   await app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
   await app.register(uploadRoutes, { prefix: "/api/v1/uploads" });
+  await app.register(pageRoutes, { prefix: "/api/v1" });
 
   app.setErrorHandler((error, req, reply) => {
     app.log.error({ err: error, traceId: req.id }, "Unhandled error");
@@ -82,11 +85,16 @@ async function build() {
   return app;
 }
 
+const COLLAB_PORT = Number(process.env["COLLAB_PORT"] ?? 3002);
+
 build()
-  .then((app) => {
+  .then(async (app) => {
     const httpServer = createServer(app.server);
     const io = createSocketServer(httpServer);
     app.decorate("io", io);
+
+    const collab = createCollabServer(COLLAB_PORT);
+    await collab.listen();
 
     app.listen({ port: PORT, host: HOST }, (err) => {
       if (err) {
@@ -95,6 +103,12 @@ build()
       }
       logger.info(`API + WebSocket listening on ${HOST}:${PORT}`);
     });
+
+    for (const sig of ["SIGINT", "SIGTERM"]) {
+      process.once(sig, () => {
+        void collab.destroy();
+      });
+    }
   })
   .catch((err) => {
     logger.error(err);

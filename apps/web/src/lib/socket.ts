@@ -22,6 +22,25 @@ type ServerToClientEvents = {
     body: string | null;
     createdAt: string;
   }) => void;
+  "page:created": (payload: {
+    id: string;
+    workspaceId: string;
+    parentId: string | null;
+    title: string;
+    icon: string | null;
+    slug: string;
+    sortOrder: number;
+  }) => void;
+  "page:updated": (payload: {
+    id: string;
+    workspaceId: string;
+    parentId: string | null;
+    title: string;
+    icon: string | null;
+    slug: string;
+    sortOrder: number;
+  }) => void;
+  "page:deleted": (payload: { id: string; workspaceId: string }) => void;
 };
 
 type ClientToServerEvents = {

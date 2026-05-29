@@ -50,6 +50,24 @@ export async function workspaceRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(201).send(workspace);
   });
 
+  app.get("/by-slug/:slug", async (req, reply) => {
+    if (!req.user) return reply.status(401).send({ type: "UNAUTHORIZED" });
+    const { slug } = req.params as { slug: string };
+    const db = app.db;
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, slug))
+      .limit(1);
+
+    if (!workspace) {
+      return reply.status(404).send({ type: "NOT_FOUND", title: "Workspace not found" });
+    }
+
+    return workspace;
+  });
+
   app.get("/:workspaceId", async (req, reply) => {
     const { workspaceId } = req.params as { workspaceId: string };
     const db = app.db;
