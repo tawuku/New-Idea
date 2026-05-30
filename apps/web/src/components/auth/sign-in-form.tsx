@@ -3,12 +3,25 @@
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type MagicLink, MagicLinkSchema } from "@nexus/schemas/auth";
+import { type SignIn, SignInSchema } from "@nexus/schemas/auth";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+
+const inputCls = (hasError: boolean) =>
+  cn(
+    "w-full rounded-lg border px-3 py-2 text-sm",
+    "bg-white dark:bg-neutral-800",
+    "text-neutral-900 dark:text-neutral-50",
+    "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
+    "outline-none transition-colors duration-[120ms]",
+    "focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
+    hasError
+      ? "border-red-400 dark:border-red-500"
+      : "border-neutral-200 dark:border-neutral-700",
+  );
 
 export function SignInForm() {
   const router = useRouter();
@@ -18,22 +31,25 @@ export function SignInForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<MagicLink>({
-    resolver: zodResolver(MagicLinkSchema),
-  });
+  } = useForm<SignIn>({ resolver: zodResolver(SignInSchema) });
 
-  const onSubmit = async (data: MagicLink) => {
+  const onSubmit = async (data: SignIn) => {
     setError(null);
-    try {
-      await authClient.signIn.email({
-        email: data.email,
-        password: "magic-link-placeholder",
-        callbackURL: "/",
-      });
-      router.push("/verify-email");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    const { error: authError } = await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+      callbackURL: "/",
+    });
+    if (authError) {
+      setError(
+        authError.code === "INVALID_EMAIL_OR_PASSWORD"
+          ? "Incorrect email or password."
+          : "Something went wrong. Please try again.",
+      );
+      return;
     }
+    router.push("/");
+    router.refresh();
   };
 
   return (
@@ -52,19 +68,39 @@ export function SignInForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-            className={cn(
-              "w-full rounded-lg border px-3 py-2 text-sm",
-              "bg-white dark:bg-neutral-800",
-              "text-neutral-900 dark:text-neutral-50",
-              "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
-              "outline-none transition-colors duration-[120ms]",
-              "focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
-              errors.email
-                ? "border-red-400 dark:border-red-500"
-                : "border-neutral-200 dark:border-neutral-700",
-            )}
+            className={inputCls(!!errors.email)}
           />
-          {errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-brand-600 dark:text-brand-400 hover:underline underline-offset-2"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <input
+            {...register("password")}
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            className={inputCls(!!errors.password)}
+          />
+          {errors.password && (
+            <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
+          )}
         </div>
 
         {error && (
@@ -80,14 +116,13 @@ export function SignInForm() {
             "w-full flex items-center justify-center gap-2",
             "rounded-lg px-4 py-2.5 text-sm font-medium",
             "bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
-            "text-white",
-            "transition-colors duration-[120ms]",
+            "text-white transition-colors duration-[120ms]",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
           )}
         >
           {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          {isSubmitting ? "Sending link..." : "Continue with email"}
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
 
@@ -115,13 +150,7 @@ export function SignInForm() {
   );
 }
 
-function OAuthButton({
-  provider,
-  label,
-}: {
-  provider: "google" | "microsoft";
-  label: string;
-}) {
+function OAuthButton({ provider, label }: { provider: "google" | "microsoft"; label: string }) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -146,11 +175,7 @@ function OAuthButton({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
       )}
     >
-      {loading ? (
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-      ) : (
-        <OAuthIcon provider={provider} />
-      )}
+      {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <OAuthIcon provider={provider} />}
       {label}
     </button>
   );
@@ -160,26 +185,13 @@ function OAuthIcon({ provider }: { provider: "google" | "microsoft" }) {
   if (provider === "google") {
     return (
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-        <path
-          d="M8.16 6.545v3.127h4.37c-.182.996-.728 1.836-1.545 2.4l2.49 1.935C14.836 12.6 16 10.473 16 8c0-.545-.055-1.09-.145-1.6H8.16z"
-          fill="#4285F4"
-        />
-        <path
-          d="M3.527 9.527l-.564.432-1.99 1.554C2.09 13.454 4.909 15.273 8.16 15.273c2.218 0 4.072-.727 5.435-1.964l-2.49-1.934c-.728.49-1.636.8-2.945.8-2.272 0-4.2-1.527-4.909-3.582l-.724.934z"
-          fill="#34A853"
-        />
-        <path
-          d="M.973 4.49A7.8 7.8 0 0 0 .727 8c0 1.236.218 2.436.727 3.51L3.527 9.48A4.65 4.65 0 0 1 3.273 8c0-.527.109-1.036.254-1.527L.973 4.49z"
-          fill="#FBBC05"
-        />
-        <path
-          d="M8.16.727c1.527 0 2.909.527 3.99 1.527L14.4 0C12.727-1.527 10.582 0 8.16 0 4.909 0 2.09 1.818.973 4.49l2.554 1.982C4.145 2.327 5.96.727 8.16.727z"
-          fill="#EA4335"
-        />
+        <path d="M8.16 6.545v3.127h4.37c-.182.996-.728 1.836-1.545 2.4l2.49 1.935C14.836 12.6 16 10.473 16 8c0-.545-.055-1.09-.145-1.6H8.16z" fill="#4285F4" />
+        <path d="M3.527 9.527l-.564.432-1.99 1.554C2.09 13.454 4.909 15.273 8.16 15.273c2.218 0 4.072-.727 5.435-1.964l-2.49-1.934c-.728.49-1.636.8-2.945.8-2.272 0-4.2-1.527-4.909-3.582l-.724.934z" fill="#34A853" />
+        <path d="M.973 4.49A7.8 7.8 0 0 0 .727 8c0 1.236.218 2.436.727 3.51L3.527 9.48A4.65 4.65 0 0 1 3.273 8c0-.527.109-1.036.254-1.527L.973 4.49z" fill="#FBBC05" />
+        <path d="M8.16.727c1.527 0 2.909.527 3.99 1.527L14.4 0C12.727-1.527 10.582 0 8.16 0 4.909 0 2.09 1.818.973 4.49l2.554 1.982C4.145 2.327 5.96.727 8.16.727z" fill="#EA4335" />
       </svg>
     );
   }
-
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
       <path d="M0 0h7.5v7.5H0z" fill="#F1511B" />

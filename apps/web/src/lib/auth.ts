@@ -71,15 +71,12 @@ export const auth = betterAuth({
       enabled: !!(process.env["MICROSOFT_CLIENT_ID"] && process.env["MICROSOFT_CLIENT_SECRET"]),
     },
   },
-  plugins: [nextCookies()],
-  user: {
-    additionalFields: {
-      name: {
-        type: "string",
-        required: true,
-      },
+  advanced: {
+    database: {
+      generateId: "uuid",
     },
   },
+  plugins: [nextCookies()],
   session: {
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
