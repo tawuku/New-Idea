@@ -48,7 +48,7 @@ export function createCollabServer(port: number) {
         .select({ userId: users.id, name: users.name })
         .from(sessions)
         .innerJoin(users, eq(sessions.userId, users.id))
-        .where(and(eq(sessions.id, token), gt(sessions.expiresAt, new Date())))
+        .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())))
         .limit(1);
 
       if (sessionRows.length === 0) {

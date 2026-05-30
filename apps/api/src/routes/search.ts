@@ -1,4 +1,4 @@
-import { messages, sql, users } from "@nexus/db";
+import { eq, messages, sql, users, workspaces } from "@nexus/db";
 import type { FastifyInstance } from "fastify";
 
 export async function searchRoutes(app: FastifyInstance): Promise<void> {
@@ -12,8 +12,17 @@ export async function searchRoutes(app: FastifyInstance): Promise<void> {
   app.get("/:workspaceId/search", async (req, reply) => {
     if (!req.user) return reply.status(401).send({ type: "UNAUTHORIZED" });
 
-    const { workspaceId } = req.params as { workspaceId: string };
+    const { workspaceId: workspaceRef } = req.params as { workspaceId: string };
     const { q, limit: limitStr } = req.query as { q?: string; limit?: string };
+
+    // Accept both UUID and slug
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workspaceRef);
+    let workspaceId = workspaceRef;
+    if (!isUuid) {
+      const [ws] = await app.db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, workspaceRef)).limit(1);
+      if (!ws) return reply.status(404).send({ type: "NOT_FOUND", title: "Workspace not found" });
+      workspaceId = ws.id;
+    }
 
     if (!q || q.trim().length < 2) {
       return reply.status(400).send({

@@ -31,7 +31,7 @@ export async function registerAuthMiddleware(app: FastifyInstance): Promise<void
       })
       .from(sessions)
       .innerJoin(users, eq(sessions.userId, users.id))
-      .where(and(eq(sessions.id, sessionToken), gt(sessions.expiresAt, new Date())))
+      .where(and(eq(sessions.token, sessionToken), gt(sessions.expiresAt, new Date())))
       .limit(1);
 
     if (row) {
