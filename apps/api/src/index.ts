@@ -91,7 +91,8 @@ build()
   .then(async (app) => {
     const httpServer = createServer(app.server);
     const io = createSocketServer(httpServer);
-    app.decorate("io", io);
+    // io decorator already added in build() as null; update the value in place
+    app.io = io;
 
     const collab = createCollabServer(COLLAB_PORT);
     await collab.listen();
