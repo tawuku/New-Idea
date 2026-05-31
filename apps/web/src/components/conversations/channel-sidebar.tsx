@@ -2,12 +2,21 @@ import { cn } from "@/lib/utils";
 import type { Channel } from "@nexus/schemas/channel";
 import { Hash, Lock, Plus } from "lucide-react";
 import Link from "next/link";
+import { headers } from "next/headers";
 
 async function fetchChannels(workspaceSlug: string): Promise<Channel[]> {
   try {
+    const cookie = (await headers()).get("cookie") ?? "";
+    const wsRes = await fetch(
+      `${process.env["API_URL"] ?? "http://localhost:3001"}/api/v1/workspaces/by-slug/${workspaceSlug}`,
+      { headers: { cookie }, cache: "no-store" },
+    );
+    if (!wsRes.ok) return [];
+    const workspace = (await wsRes.json()) as { id: string };
+
     const res = await fetch(
-      `${process.env["API_URL"] ?? "http://localhost:3001"}/api/v1/${workspaceSlug}/channels`,
-      { next: { revalidate: 30 } },
+      `${process.env["API_URL"] ?? "http://localhost:3001"}/api/v1/${workspace.id}/channels`,
+      { headers: { cookie }, cache: "no-store" },
     );
     if (!res.ok) return [];
     return (await res.json()) as Channel[];
