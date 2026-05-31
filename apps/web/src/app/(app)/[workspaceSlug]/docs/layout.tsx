@@ -17,21 +17,19 @@ export default function DocsLayout({ children, params }: DocsLayoutProps) {
   const [pending, startTransition] = useTransition();
   const [workspace, setWorkspace] = useState<WorkspaceBasic | null>(null);
 
-  const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-
   useEffect(() => {
-    fetch(`${apiUrl}/api/v1/workspaces/by-slug/${workspaceSlug}`, { credentials: "include" })
+    fetch(`/api/v1/workspaces/by-slug/${workspaceSlug}`, { credentials: "include" })
       .then((r) => (r.ok ? (r.json() as Promise<WorkspaceBasic>) : null))
       .then((ws) => {
         if (ws) setWorkspace(ws);
       })
       .catch(() => null);
-  }, [apiUrl, workspaceSlug]);
+  }, [workspaceSlug]);
 
   const handleCreatePage = useCallback(async () => {
     if (!workspace) return;
 
-    const res = await fetch(`${apiUrl}/api/v1/${workspace.id}/pages`, {
+    const res = await fetch(`/api/v1/${workspace.id}/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -43,7 +41,7 @@ export default function DocsLayout({ children, params }: DocsLayoutProps) {
     startTransition(() => {
       router.push(`/${workspaceSlug}/docs/${page.id}`);
     });
-  }, [workspace, apiUrl, workspaceSlug, router]);
+  }, [workspace, workspaceSlug, router]);
 
   return (
     <div className="flex h-full overflow-hidden">

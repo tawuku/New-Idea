@@ -47,7 +47,7 @@ export function NotificationBell({ userId }: { userId: string }) {
     return () => {
       socket.off("notification:new");
     };
-  }, [userId, apiUrl]);
+  }, [userId]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

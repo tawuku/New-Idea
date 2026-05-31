@@ -23,33 +23,31 @@ export default function DocPage({
   const [loading, setLoading] = useState(true);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
-  const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-
   // Resolve workspace id from slug
   useEffect(() => {
-    fetch(`${apiUrl}/api/v1/workspaces/by-slug/${workspaceSlug}`, { credentials: "include" })
+    fetch(`/api/v1/workspaces/by-slug/${workspaceSlug}`, { credentials: "include" })
       .then((r) => (r.ok ? (r.json() as Promise<{ id: string }>) : null))
       .then((ws) => {
         if (ws) setWorkspaceId(ws.id);
       })
       .catch(() => null);
-  }, [apiUrl, workspaceSlug]);
+  }, [workspaceSlug]);
 
   useEffect(() => {
     if (!workspaceId) return;
-    fetch(`${apiUrl}/api/v1/${workspaceId}/pages/${pageId}`, { credentials: "include" })
+    fetch(`/api/v1/${workspaceId}/pages/${pageId}`, { credentials: "include" })
       .then((r) => (r.ok ? (r.json() as Promise<PageData>) : null))
       .then((p) => {
         setPage(p);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [apiUrl, workspaceId, pageId]);
+  }, [workspaceId, pageId]);
 
   const handleTitleChange = useCallback(
     async (title: string) => {
       if (!page || !workspaceId) return;
-      const res = await fetch(`${apiUrl}/api/v1/${workspaceId}/pages/${pageId}`, {
+      const res = await fetch(`/api/v1/${workspaceId}/pages/${pageId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -60,7 +58,7 @@ export default function DocPage({
         setPage(updated);
       }
     },
-    [page, workspaceId, pageId, apiUrl],
+    [page, workspaceId, pageId],
   );
 
   if (loading) {

@@ -56,7 +56,7 @@ export function CommandPalette() {
       }
     }, 220);
     return () => clearTimeout(timer);
-  }, [query, workspaceSlug, apiUrl]);
+  }, [query, workspaceSlug]);
 
   const navigate = (path: string) => {
     setOpen(false);
