@@ -25,7 +25,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   useEffect(() => {
     fetch(`${apiUrl}/api/v1/notifications`, { credentials: "include" })
       .then((r) => r.json() as Promise<Notification[]>)
-      .then((data) => setNotifications(data))
+      .then((data) => setNotifications(Array.isArray(data) ? data : []))
       .catch(() => {});
 
     const socket = getSocket();
