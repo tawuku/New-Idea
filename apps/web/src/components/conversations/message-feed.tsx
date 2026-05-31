@@ -19,8 +19,7 @@ export function MessageFeed({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-    fetch(`${apiUrl}/api/v1/${workspaceSlug}/channels/${channelId}/messages`, {
+    fetch(`/api/v1/${workspaceSlug}/channels/${channelId}/messages`, {
       credentials: "include",
     })
       .then((r) => r.json() as Promise<MessageWithAuthor[]>)

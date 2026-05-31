@@ -18,12 +18,10 @@ export function NotificationBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/v1/notifications`, { credentials: "include" })
+    fetch("/api/v1/notifications", { credentials: "include" })
       .then((r) => r.json() as Promise<Notification[]>)
       .then((data) => setNotifications(Array.isArray(data) ? data : []))
       .catch(() => {});
@@ -62,7 +60,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   }, [open]);
 
   const markAllRead = async () => {
-    await fetch(`${apiUrl}/api/v1/notifications/read-all`, {
+    await fetch("/api/v1/notifications/read-all", {
       method: "PATCH",
       credentials: "include",
     });
@@ -70,7 +68,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   };
 
   const markRead = async (id: string) => {
-    await fetch(`${apiUrl}/api/v1/notifications/${id}/read`, {
+    await fetch(`/api/v1/notifications/${id}/read`, {
       method: "PATCH",
       credentials: "include",
     });

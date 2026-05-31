@@ -118,8 +118,7 @@ export function PageTree({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-    fetch(`${apiUrl}/api/v1/${workspaceId}/pages`, { credentials: "include" })
+    fetch(`/api/v1/${workspaceId}/pages`, { credentials: "include" })
       .then((r) => r.json())
       .then((data: FlatPage[]) => {
         setPages(data);

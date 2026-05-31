@@ -19,9 +19,8 @@ export function ThreadPanel({
   const [replies, setReplies] = useState<MessageWithAuthor[]>([]);
 
   useEffect(() => {
-    const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
     fetch(
-      `${apiUrl}/api/v1/${workspaceSlug}/channels/${parentMessage.channelId}/messages?parentId=${parentMessage.id}`,
+      `/api/v1/${workspaceSlug}/channels/${parentMessage.channelId}/messages?parentId=${parentMessage.id}`,
       { credentials: "include" },
     )
       .then((r) => r.json() as Promise<MessageWithAuthor[]>)

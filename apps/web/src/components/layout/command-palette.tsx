@@ -23,7 +23,6 @@ export function CommandPalette() {
   const pathname = usePathname();
 
   const workspaceSlug = pathname.split("/")[1] ?? "";
-  const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -46,7 +45,7 @@ export function CommandPalette() {
       setLoading(true);
       try {
         const res = await fetch(
-          `${apiUrl}/api/v1/${workspaceSlug}/search?q=${encodeURIComponent(query)}&limit=8`,
+          `/api/v1/${workspaceSlug}/search?q=${encodeURIComponent(query)}&limit=8`,
           { credentials: "include" },
         );
         if (res.ok) setResults(await res.json() as SearchResult[]);

@@ -32,8 +32,7 @@ export function MessageComposer({
   const onSubmit = async (data: SendMessage) => {
     setError(null);
     try {
-      const apiUrl = process.env["NEXT_PUBLIC_API_URL"] ?? "http://localhost:3001";
-      const res = await fetch(`${apiUrl}/api/v1/${workspaceSlug}/channels/${channelId}/messages`, {
+      const res = await fetch(`/api/v1/${workspaceSlug}/channels/${channelId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
