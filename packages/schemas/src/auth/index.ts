@@ -3,12 +3,12 @@ import { z } from "zod";
 export const SignUpSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   name: z.string().min(1, "Name is required").max(100),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128).optional(),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128),
 });
 
 export const SignInSchema = z.object({
   email: z.string().email("Please enter a valid email"),
-  password: z.string().optional(),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const MagicLinkSchema = z.object({

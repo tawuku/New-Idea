@@ -4,7 +4,8 @@ import { users } from "./users.js";
 export const sessions = pgTable(
   "sessions",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
+    token: text("token").notNull().unique(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -35,6 +36,7 @@ export const accounts = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     providerId: text("provider_id").notNull(),
     accountId: text("account_id").notNull(),
+    password: text("password"),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),

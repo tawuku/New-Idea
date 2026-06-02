@@ -1,0 +1,68 @@
+{
+  "name": "@nexus/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Nexus Workspace — Desktop App",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.json --watch",
+    "build": "tsc -p tsconfig.json",
+    "start": "electron .",
+    "package": "pnpm run build && electron-builder",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist out"
+  },
+  "dependencies": {
+    "electron-is-dev": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.10",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.3"
+  },
+  "build": {
+    "appId": "com.nexus.workspace",
+    "productName": "Nexus",
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../../apps/api/dist",
+        "to": "api",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/web/.next/standalone",
+        "to": "web",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/web/.next/static",
+        "to": "web/.next/static",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/web/public",
+        "to": "web/public",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"]
+    }
+  }
+}

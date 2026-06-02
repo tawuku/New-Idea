@@ -1,5 +1,7 @@
 "use client";
 
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import {
   CheckSquare,
@@ -13,16 +15,27 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
-  { label: "Conversations", href: "/conversations", icon: MessageSquare, available: false },
-  { label: "Workspaces", href: "/docs", icon: FileText, available: false },
-  { label: "Work", href: "/work", icon: CheckSquare, available: false },
-  { label: "Meet", href: "/meet", icon: Video, available: false },
-  { label: "Hub", href: "/hub", icon: Layers, available: false },
-] as const;
+type NavItem = {
+  label: string;
+  segment: string;
+  icon: typeof MessageSquare;
+  available: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Conversations", segment: "conversations", icon: MessageSquare, available: true },
+  { label: "Docs", segment: "docs", icon: FileText, available: true },
+  { label: "Work", segment: "work", icon: CheckSquare, available: false },
+  { label: "Meet", segment: "meet", icon: Video, available: false },
+  { label: "Hub", segment: "hub", icon: Layers, available: false },
+];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  // Extract workspace slug from pathname: /[workspaceSlug]/...
+  const workspaceSlug = pathname.split("/")[1] ?? "";
 
   return (
     <aside className="flex flex-col w-14 h-full border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
@@ -44,12 +57,13 @@ export function AppSidebar() {
         aria-label="Main navigation"
       >
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const href = workspaceSlug ? `/${workspaceSlug}/${item.segment}` : "#";
+          const isActive = pathname.startsWith(`/${workspaceSlug}/${item.segment}`);
           const Icon = item.icon;
           return (
             <Link
-              key={item.href}
-              href={item.available ? item.href : "#"}
+              key={item.segment}
+              href={item.available && workspaceSlug ? href : "#"}
               title={item.available ? item.label : `${item.label} (coming soon)`}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
@@ -69,7 +83,8 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="pb-3 px-2">
+      <div className="pb-3 px-2 flex flex-col items-center gap-1">
+        {session?.user.id && <NotificationBell userId={session.user.id} />}
         <Link
           href="/settings"
           title="Settings"

@@ -10,6 +10,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+const inputCls = (hasError: boolean) =>
+  cn(
+    "w-full rounded-lg border px-3 py-2 text-sm",
+    "bg-white dark:bg-neutral-800",
+    "text-neutral-900 dark:text-neutral-50",
+    "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
+    "outline-none transition-colors duration-[120ms]",
+    "focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
+    hasError
+      ? "border-red-400 dark:border-red-500"
+      : "border-neutral-200 dark:border-neutral-700",
+  );
+
 export function SignUpForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -18,23 +31,26 @@ export function SignUpForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignUp>({
-    resolver: zodResolver(SignUpSchema),
-  });
+  } = useForm<SignUp>({ resolver: zodResolver(SignUpSchema) });
 
   const onSubmit = async (data: SignUp) => {
     setError(null);
-    try {
-      await authClient.signUp.email({
-        email: data.email,
-        name: data.name,
-        password: data.password ?? crypto.randomUUID(),
-        callbackURL: "/workspace/create",
-      });
-      router.push("/verify-email");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    const { error: authError } = await authClient.signUp.email({
+      email: data.email,
+      name: data.name,
+      password: data.password,
+      callbackURL: "/workspace/create",
+    });
+    if (authError) {
+      setError(
+        authError.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"
+          ? "An account with this email already exists."
+          : "Something went wrong. Please try again.",
+      );
+      return;
     }
+    router.push("/workspace/create");
+    router.refresh();
   };
 
   return (
@@ -53,17 +69,7 @@ export function SignUpForm() {
             type="text"
             autoComplete="name"
             placeholder="Ada Lovelace"
-            className={cn(
-              "w-full rounded-lg border px-3 py-2 text-sm",
-              "bg-white dark:bg-neutral-800",
-              "text-neutral-900 dark:text-neutral-50",
-              "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
-              "outline-none transition-colors duration-[120ms]",
-              "focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
-              errors.name
-                ? "border-red-400 dark:border-red-500"
-                : "border-neutral-200 dark:border-neutral-700",
-            )}
+            className={inputCls(!!errors.name)}
           />
           {errors.name && <p className="mt-1.5 text-xs text-red-500">{errors.name.message}</p>}
         </div>
@@ -81,19 +87,29 @@ export function SignUpForm() {
             type="email"
             autoComplete="email"
             placeholder="you@company.com"
-            className={cn(
-              "w-full rounded-lg border px-3 py-2 text-sm",
-              "bg-white dark:bg-neutral-800",
-              "text-neutral-900 dark:text-neutral-50",
-              "placeholder:text-neutral-400 dark:placeholder:text-neutral-500",
-              "outline-none transition-colors duration-[120ms]",
-              "focus:ring-2 focus:ring-brand-500 focus:border-brand-500",
-              errors.email
-                ? "border-red-400 dark:border-red-500"
-                : "border-neutral-200 dark:border-neutral-700",
-            )}
+            className={inputCls(!!errors.email)}
           />
           {errors.email && <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5"
+          >
+            Password
+          </label>
+          <input
+            {...register("password")}
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Min. 8 characters"
+            className={inputCls(!!errors.password)}
+          />
+          {errors.password && (
+            <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
+          )}
         </div>
 
         {error && (
@@ -109,8 +125,7 @@ export function SignUpForm() {
             "w-full flex items-center justify-center gap-2",
             "rounded-lg px-4 py-2.5 text-sm font-medium",
             "bg-brand-600 hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
-            "text-white",
-            "transition-colors duration-[120ms]",
+            "text-white transition-colors duration-[120ms]",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
           )}

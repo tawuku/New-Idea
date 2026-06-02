@@ -1,10 +1,25 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${process.env["API_URL"] ?? "http://localhost:3001"}/api/v1/:path*`,
+      },
+    ];
+  },
   reactStrictMode: true,
-  transpilePackages: ["@nexus/ui", "@nexus/schemas"],
-  experimental: {
-    reactCompiler: true,
+  transpilePackages: ["@nexus/ui", "@nexus/schemas", "@nexus/db", "@nexus/config"],
+  webpack(config) {
+    // Workspace packages import each other with .js extensions (ESM TS convention).
+    // Webpack needs this alias to resolve them back to .ts source files.
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js", ".jsx"],
+      ".jsx": [".tsx", ".jsx"],
+    };
+    return config;
   },
   images: {
     remotePatterns: [

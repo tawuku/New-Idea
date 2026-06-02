@@ -34,7 +34,7 @@ export function CreateWorkspaceForm() {
   const onSubmit = async (data: CreateWorkspace) => {
     setError(null);
     try {
-      const res = await fetch(`${process.env["NEXT_PUBLIC_APP_URL"]}/api/v1/workspaces`, {
+      const res = await fetch("/api/v1/workspaces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

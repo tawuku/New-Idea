@@ -1,4 +1,4 @@
-import { eq, workspaceMembers, workspaces } from "@nexus/db";
+import { channelMembers, channels, eq, workspaceMembers, workspaces } from "@nexus/db";
 import { CreateWorkspaceSchema } from "@nexus/schemas/workspace";
 import type { FastifyInstance } from "fastify";
 
@@ -47,7 +47,34 @@ export async function workspaceRoutes(app: FastifyInstance): Promise<void> {
       role: "owner",
     });
 
+    const [general] = await db
+      .insert(channels)
+      .values({ workspaceId: workspace.id, name: "general", type: "public", createdById: req.user.id })
+      .returning();
+
+    if (general) {
+      await db.insert(channelMembers).values({ channelId: general.id, userId: req.user.id });
+    }
+
     return reply.status(201).send(workspace);
+  });
+
+  app.get("/by-slug/:slug", async (req, reply) => {
+    if (!req.user) return reply.status(401).send({ type: "UNAUTHORIZED" });
+    const { slug } = req.params as { slug: string };
+    const db = app.db;
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, slug))
+      .limit(1);
+
+    if (!workspace) {
+      return reply.status(404).send({ type: "NOT_FOUND", title: "Workspace not found" });
+    }
+
+    return workspace;
   });
 
   app.get("/:workspaceId", async (req, reply) => {
